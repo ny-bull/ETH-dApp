@@ -12,9 +12,11 @@ const App = () => {
   const [messageValue, setMessageValue] = useState("");
   /* すべてのwavesを保存する状態変数を定義 */
   const [allWaves, setAllWaves] = useState([]);
+  // コントラクトの残高
+  const [contractBalance, setContractBalance] = useState(0);
   console.log("currentAccount: ", currentAccount);
   /* デプロイされたコントラクトのアドレスを保持する変数を作成 */
-  const contractAddress = "0x1ad6f21725b6Af5161512a12F70F2ecCFf21e5f6";
+  const contractAddress = "0xd6f11A8d2Ec67d486211106c7Db7D09afF42eb27";
   /* コントラクトからすべてのwavesを取得するメソッドを作成 */
   /* ABIの内容を参照する変数を作成 */
   const contractABI = abi.abi;
@@ -57,6 +59,16 @@ const App = () => {
   useEffect(() => {
     let wavePortalContract;
 
+    const getContractBalance = async () => {
+      const provider = new ethers.providers.Web3Provider(window.ethereum);
+      const balance = await provider.getBalance(
+        contractAddress
+      );
+      console.log(ethers.utils.formatEther(balance));
+      setContractBalance(()=>ethers.utils.formatEther(balance));
+    };
+    getContractBalance()
+
     const onNewWave = (from, timestamp, message) => {
       console.log("NewWave", from, timestamp, message);
       setAllWaves((prevState) => [
@@ -87,7 +99,7 @@ const App = () => {
         wavePortalContract.off("NewWave", onNewWave);
       }
     };
-  }, []);
+  }, [contractBalance, contractABI]);
 
   /* window.ethereumにアクセスできることを確認する関数を実装 */
   const checkIfWalletIsConnected = async () => {
@@ -154,9 +166,15 @@ const App = () => {
         console.log("Mined -- ", waveTxn.hash);
         count = await wavePortalContract.getTotalWaves();
         console.log("Retrieved total wave count...", count.toNumber());
+
+        let contractBalance_post = await provider.getBalance(
+          wavePortalContract.address
+        );
+        setContractBalance(() =>{return ethers.utils.formatEther(contractBalance_post)})
       } else {
         console.log("Ethereum object doesn't exist!");
       }
+
     } catch (error) {
       console.log(error);
     }
@@ -185,6 +203,9 @@ const App = () => {
           <span role="img" aria-label="shine">
             ✨
           </span>
+          <div>
+            現在のコントラクトの残高は {contractBalance} です
+          </div>
         </div>
         <br />
         {/* ウォレットコネクトのボタンを実装 */}
